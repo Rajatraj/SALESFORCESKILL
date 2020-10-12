@@ -1,156 +1,209 @@
-/* *
- * This sample demonstrates handling intents from an Alexa skill using the Alexa Skills Kit SDK (v2).
- * Please visit https://alexa.design/cookbook for additional examples on implementing slots, dialog management,
- * session persistence, api calls, and more.
- * */
-const Alexa = require('ask-sdk-core');
-
-const LaunchRequestHandler = {
-    canHandle(handlerInput) {
-        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'LaunchRequest';
-    },
-    handle(handlerInput) {
-        const speakOutput = 'Welcome, you can say Hello or Help. Which would you like to try?';
-
-        return handlerInput.responseBuilder
-            .speak(speakOutput)
-            .reprompt(speakOutput)
-            .getResponse();
-    }
-};
-
-const HelloWorldIntentHandler = {
-    canHandle(handlerInput) {
-        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'HelloWorldIntent';
-    },
-    handle(handlerInput) {
-        const speakOutput = 'Hello World!';
-
-        return handlerInput.responseBuilder
-            .speak(speakOutput)
-            //.reprompt('add a reprompt if you want to keep the session open for the user to respond')
-            .getResponse();
-    }
-};
-
-const HelpIntentHandler = {
-    canHandle(handlerInput) {
-        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.HelpIntent';
-    },
-    handle(handlerInput) {
-        const speakOutput = 'You can say hello to me! How can I help?';
-
-        return handlerInput.responseBuilder
-            .speak(speakOutput)
-            .reprompt(speakOutput)
-            .getResponse();
-    }
-};
-
-const CancelAndStopIntentHandler = {
-    canHandle(handlerInput) {
-        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-            && (Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.CancelIntent'
-                || Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.StopIntent');
-    },
-    handle(handlerInput) {
-        const speakOutput = 'Goodbye!';
-
-        return handlerInput.responseBuilder
-            .speak(speakOutput)
-            .getResponse();
-    }
-};
-/* *
- * FallbackIntent triggers when a customer says something that doesn’t map to any intents in your skill
- * It must also be defined in the language model (if the locale supports it)
- * This handler can be safely added but will be ingnored in locales that do not support it yet 
- * */
-const FallbackIntentHandler = {
-    canHandle(handlerInput) {
-        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.FallbackIntent';
-    },
-    handle(handlerInput) {
-        const speakOutput = 'Sorry, I don\'t know about that. Please try again.';
-
-        return handlerInput.responseBuilder
-            .speak(speakOutput)
-            .reprompt(speakOutput)
-            .getResponse();
-    }
-};
-/* *
- * SessionEndedRequest notifies that a session was ended. This handler will be triggered when a currently open 
- * session is closed for one of the following reasons: 1) The user says "exit" or "quit". 2) The user does not 
- * respond or says something that does not match an intent defined in your voice model. 3) An error occurs 
- * */
-const SessionEndedRequestHandler = {
-    canHandle(handlerInput) {
-        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'SessionEndedRequest';
-    },
-    handle(handlerInput) {
-        console.log(`~~~~ Session ended: ${JSON.stringify(handlerInput.requestEnvelope)}`);
-        // Any cleanup logic goes here.
-        return handlerInput.responseBuilder.getResponse(); // notice we send an empty response
-    }
-};
-/* *
- * The intent reflector is used for interaction model testing and debugging.
- * It will simply repeat the intent the user said. You can create custom handlers for your intents 
- * by defining them above, then also adding them to the request handler chain below 
- * */
-const IntentReflectorHandler = {
-    canHandle(handlerInput) {
-        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest';
-    },
-    handle(handlerInput) {
-        const intentName = Alexa.getIntentName(handlerInput.requestEnvelope);
-        const speakOutput = `You just triggered ${intentName}`;
-
-        return handlerInput.responseBuilder
-            .speak(speakOutput)
-            //.reprompt('add a reprompt if you want to keep the session open for the user to respond')
-            .getResponse();
-    }
-};
 /**
- * Generic error handling to capture any syntax or routing errors. If you receive an error
- * stating the request handler chain is not found, you have not implemented a handler for
- * the intent being invoked or included it in the skill builder below 
- * */
-const ErrorHandler = {
-    canHandle() {
-        return true;
-    },
-    handle(handlerInput, error) {
-        const speakOutput = 'Sorry, I had trouble doing what you asked. Please try again.';
-        console.log(`~~~~ Error handled: ${JSON.stringify(error)}`);
+ * App ID for the skill to restrict access
+ */
+var APP_ID = undefined; //replace with "amzn1.echo-sdk-ams.app.[your-unique-value-here]";
 
-        return handlerInput.responseBuilder
-            .speak(speakOutput)
-            .reprompt(speakOutput)
-            .getResponse();
-    }
+var CLIENT_ID = '3MVG9G9pzCUSkzZvpkyO5EmpVY25YzMrHWjuNJw3ULZq4n_dXu7lAV7OHXEfIaIEyWz6dAuKhcsmM2Yc_JnBg';
+var CLIENT_SECRET = 'FDAEDC009C5B29E46ADA5C1A52D263B31A6C9702C99CF4EB946D15E50A38486A';
+var USERNAME = 'rajatraj0011@playful-bear-fqt084.com';
+var PASSWORD = 'Right#88e6wUk1pnLbDRN4bqTmVhXzHE';
+var CALLBACK_URL = 'http://localhost:3000/oauth/_callback';
+
+/**
+ * The AlexaSkill prototype and helper functions
+ */
+var AlexaSkill = require('./AlexaSkill');
+var nforce = require('nforce');
+var _ = require('lodash');
+var moment = require('moment-timezone');
+var pluralize = require('pluralize');
+
+/**
+ * Salesforce is a child of AlexaSkill.
+ * To read more about inheritance in JavaScript, see the link below.
+ *
+ * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Introduction_to_Object-Oriented_JavaScript#Inheritance
+ */
+var Salesforce = function () {
+    AlexaSkill.call(this, APP_ID);
+};
+
+var org = nforce.createConnection({
+  clientId: CLIENT_ID,
+  clientSecret: CLIENT_SECRET,
+  redirectUri: CALLBACK_URL,
+  mode: 'single'
+});
+
+// Extend AlexaSkill
+Salesforce.prototype = Object.create(AlexaSkill.prototype);
+Salesforce.prototype.constructor = Salesforce;
+
+Salesforce.prototype.eventHandlers.onSessionStarted = function (sessionStartedRequest, session) {
+    console.log("Salesforce onSessionStarted requestId: " + sessionStartedRequest.requestId
+        + ", sessionId: " + session.sessionId);
+    // any initialization logic goes here
+};
+
+Salesforce.prototype.eventHandlers.onLaunch = function (launchRequest, session, response) {
+    console.log("Salesforce onLaunch requestId: " + launchRequest.requestId + ", sessionId: " + session.sessionId);
 };
 
 /**
- * This handler acts as the entry point for your skill, routing all request and response
- * payloads to the handlers above. Make sure any new handlers or interceptors you've
- * defined are included below. The order matters - they're processed top to bottom 
- * */
-exports.handler = Alexa.SkillBuilders.custom()
-    .addRequestHandlers(
-        LaunchRequestHandler,
-        HelloWorldIntentHandler,
-        HelpIntentHandler,
-        CancelAndStopIntentHandler,
-        FallbackIntentHandler,
-        SessionEndedRequestHandler,
-        IntentReflectorHandler)
-    .addErrorHandlers(
-        ErrorHandler)
-    .withCustomUserAgent('sample/hello-world/v1.2')
-    .lambda();
+ * Overridden to show that a subclass can override this function to teardown session state.
+ */
+Salesforce.prototype.eventHandlers.onSessionEnded = function (sessionEndedRequest, session) {
+    console.log("Salesforce onSessionEnded requestId: " + sessionEndedRequest.requestId
+        + ", sessionId: " + session.sessionId);
+    // any cleanup logic goes here
+};
+
+Salesforce.prototype.intentHandlers = {
+
+  // check the status of an apportunity by name
+  OpportunityStatusEvent: function (intent, session, response) {
+      handleOpportunityStatusRequest(intent, response);
+  },
+
+  // start the new lead creation process
+  LeadStartIntent: function (intent, session, response) {
+      handleLeadStartRequest(session, response);
+  },
+
+  // add the name to the lead session
+  LeadNameIntent: function (intent, session, response) {
+      handleLeadNameIntent(intent, session, response);
+  },
+
+  // get the name and create the lead
+  LeadCompanyIntent: function (intent, session, response) {
+      handleLeadCompanyIntent(intent, session, response);
+  },
+
+  // check for any new leads
+  NewLeadsIntent: function (intent, session, response) {
+      handleNewLeadsRequest(response);
+  },
+
+  // check my calendar
+  MyCalendarIntent: function (intent, session, response) {
+      handleMyCalendarRequest(response);
+  },
+
+  // help with 'Salesforce'
+  HelpIntent: function (intent, session, response) {
+      response.ask("You can ask Salesforce to check for any new leads, your calendar for today, the status of a specific opportunity or to create a new lead, or, you can say exit... What can I help you with?");
+  }
+};
+
+// start a new session to create a lead
+function handleLeadStartRequest(session, response) {
+  var speechOutput = "OK, let's create a new lead., What is the person's first and last name?";
+  response.ask(speechOutput);
+}
+
+// continue the session, collect the person's name
+function handleLeadNameIntent(intent, session, response) {
+  var speechOutput = "Got it. the name is, " + intent.slots.Name.value + "., What is the company name?";
+  session.attributes.name = intent.slots.Name.value;
+  response.ask(speechOutput);
+}
+
+// collect the company name and create the actual lead
+function handleLeadCompanyIntent(intent, session, response) {
+  var speechOutput = "Bingo! I created a new lead for  "
+    + session.attributes.name + " with the company name " + intent.slots.Company.value;
+  var names = session.attributes.name.split(' ');
+  var obj = nforce.createSObject('Lead');
+  obj.set('FirstName', names[0]);
+  obj.set('LastName', names[1]);
+  obj.set('Company', intent.slots.Company.value);
+
+  org.authenticate({ username: USERNAME, password: PASSWORD }).then(function(){
+    return org.insert({ sobject: obj })
+  }).then(function(results) {
+    if (results.success) {
+      response.tellWithCard(speechOutput, "Salesforce", speechOutput);
+    } else {
+      speechOutput = 'Darn, there was a salesforce problem, sorry.';
+      response.tellWithCard(speechOutput, "Salesforce", speechOutput);
+    }
+  }).error(function(err) {
+    var errorOutput = 'Darn, there was a Salesforce problem, sorry';
+    response.tell(errorOutput, "Salesforce", errorOutput);
+  });
+}
+
+// fetch an opportunity by name
+function handleOpportunityStatusRequest(intent, response) {
+  var opportunityName = intent.slots.OpportunityName.value;
+  var query = "Select Name, StageName, Probability, Amount from Opportunity where Name = '" + opportunityName + "'";
+  // auth and run query
+  org.authenticate({ username: USERNAME, password: PASSWORD }).then(function(){
+    return org.query({ query: query })
+  }).then(function(results) {
+    var speechOutput = 'Sorry, I could not find an Opportunity named, ' + opportunityName;
+    if (results.records.length > 0) {
+      var opp = results.records[0];
+      speechOutput = 'I found Opportunity ' + opportunityName + ' for $' + opp.get('Amount')
+        + ', the stage is ' + opp.get('StageName') + ' and the probability is '
+        + opp.get('Probability') + '%';
+    }
+    response.tellWithCard(speechOutput, "Salesforce", speechOutput);
+  }).error(function(err) {
+    var errorOutput = 'Darn, there was a Salesforce problem, sorry';
+    response.tell(errorOutput, "Salesforce", errorOutput);
+  });
+}
+
+// find any calendar events for today
+function handleMyCalendarRequest(response) {
+  var query = 'select id, StartDateTime, Subject, Who.Name from Event where startdatetime = TODAY order by StartDateTime';
+  // auth and run query
+  org.authenticate({ username: USERNAME, password: PASSWORD }).then(function(){
+    return org.query({ query: query })
+  }).then(function(results) {
+    var speechOutput = 'You have  ' + results.records.length + ' ' + pluralize('event', results.records.length) + ' for today, ';
+    _.forEach(results.records, function(rec) {
+      speechOutput += 'At ' + moment(rec.get('StartDateTime')).tz('America/Los_Angeles').format('h:m a') + ', ' + rec.get('Subject');
+      if (rec.get('Who')) speechOutput += ', with  ' + rec.get('Who').Name;
+      speechOutput += ', ';
+    });
+    response.tellWithCard(speechOutput, "Salesforce", speechOutput);
+  }).error(function(err) {
+    var errorOutput = 'Darn, there was a Salesforce problem, sorry';
+    response.tell(errorOutput, "Salesforce", errorOutput);
+  });
+}
+
+// find any leads created today
+function handleNewLeadsRequest(response) {
+  var query = 'Select Name, Company from Lead where CreatedDate = TODAY';
+  // auth and run query
+  org.authenticate({ username: USERNAME, password: PASSWORD }).then(function(){
+    return org.query({ query: query })
+  }).then(function(results) {
+    speechOutput = 'Sorry, you do not have any new leads for today.'
+    var recs = results.records;
+    if (recs.length > 0) {
+      speechOutput = 'You have ' + recs.length + ' new ' + pluralize('lead', recs.length) + ', ';
+      for (i=0; i < recs.length; i++){
+        speechOutput +=  i+1 + ', ' + recs[i].get('Name') + ' from ' + recs[i].get('Company') + ', ';
+        if (i === recs.length-2) speechOutput += ' and ';
+      }
+      speechOutput += ', Go get them tiger!';
+    }
+    // Create speech output
+    response.tellWithCard(speechOutput, "Salesforce", speechOutput);
+  }).error(function(err) {
+    var errorOutput = 'Darn, there was a Salesforce problem, sorry';
+    response.tell(errorOutput, "Salesforce", errorOutput);
+  });
+}
+
+// Create the handler that responds to the Alexa Request.
+exports.handler = function (event, context) {
+    // Create an instance of the Salesforce skill.
+    var salesforce = new Salesforce();
+    salesforce.execute(event, context);
+};
